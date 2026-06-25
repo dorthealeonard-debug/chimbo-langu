@@ -1,0 +1,16 @@
+{
+  "name": "CHIMBO - Tukupeleke Alipo",
+  "short_name": "CHIMBO",
+  "description": "Pata Bidhaa na Huduma Bora kwa Bei Halisi mtaani Dar es Salaam na Tanzania nzima.",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#faf9ff",
+  "theme_color": "#003d9b",
+  "icons": [
+    {
+      "src": "https://lh3.googleusercontent.com/aida-public/AB6AXuAZq14w5oOUDV2bJZU6XIdfXcfKM_iBRoDma12XkTMbwk0osZ25G4uEbqLMxo7hsOmm5Pt00M21i2MGwJOduFFUMaTLHovWS_w9niXJL4TH7gjoU02J1UDwjCDjWmqx-qV5ieo6q3Kz_Z7hhojgQ8wvqGQPQXYJsb1ksFyHPpnSwKi-ptsvIBhVx3Q26xgz8tSbHvDjs1KGoDORUNWAYELZ8hVtr5bacbrgWbrTjKXkCmQu3w8986juNOcibs4G2uolho9NGDgG-EiS",
+      "sizes": "192x192",
+      "type": "image/png"
+    }
+  ]
+}

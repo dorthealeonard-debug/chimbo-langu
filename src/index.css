@@ -1,0 +1,693 @@
+@import "./tokens.css";
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=Space+Grotesk:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap');
+
+/* Global resets & scrollbar overrides */
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  font-family: var(--font-sans);
+  background-color: var(--color-background);
+  color: var(--color-on-surface);
+  line-height: 1.5;
+  -webkit-font-smoothing: antialiased;
+}
+
+#root {
+  min-height: 100vh;
+}
+
+/* Material symbols configuration */
+.material-symbols-outlined {
+  font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+}
+
+/* Stitch layout classes to fit a 480px PWA preview on desktop */
+.stitch-app {
+  max-width: var(--card-width-pwa);
+  margin: 0 auto;
+  background-color: var(--color-background);
+  min-height: 100vh;
+  position: relative;
+  box-shadow: 0 0 40px rgba(15, 23, 42, 0.05);
+}
+
+.stitch-header {
+  position: fixed;
+  top: 0;
+  width: 100%;
+  max-width: var(--card-width-pwa);
+  z-index: 40;
+  background-color: var(--color-surface);
+  box-shadow: var(--shadow-sm);
+  border-b: 1px solid rgba(226, 232, 240, 0.5);
+}
+
+.stitch-header-content {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: var(--spacing-base) var(--screen-padding-x);
+  height: 60px;
+}
+
+.stitch-main {
+  padding-top: var(--screen-padding-y-header);
+  padding-bottom: var(--screen-padding-y-footer);
+  padding-left: var(--screen-padding-x);
+  padding-right: var(--screen-padding-x);
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-md);
+}
+
+.stitch-footer {
+  position: fixed;
+  bottom: 0;
+  width: 100%;
+  max-width: var(--card-width-pwa);
+  z-index: 40;
+  background-color: rgba(255, 255, 255, 0.95);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  box-shadow: var(--shadow-lg);
+  border-top: 1px solid rgba(226, 232, 240, 0.6);
+}
+
+.stitch-footer-content {
+  display: flex;
+  justify-content: space-around;
+  align-items: center;
+  padding-top: var(--spacing-xs);
+  padding-bottom: var(--spacing-xs);
+  height: 64px;
+}
+
+/* Typography tokens map */
+.stitch-title-display {
+  font-family: var(--font-display);
+  font-size: var(--font-size-2xl);
+  font-weight: var(--font-weight-black);
+  color: var(--color-primary);
+  letter-spacing: -0.04em;
+}
+
+.stitch-title-large {
+  font-family: var(--font-display);
+  font-size: var(--font-size-xl);
+  font-weight: var(--font-weight-bold);
+  color: var(--color-on-surface);
+  line-height: 1.25;
+}
+
+.stitch-title-medium {
+  font-family: var(--font-sans);
+  font-size: var(--font-size-md);
+  font-weight: var(--font-weight-semibold);
+  color: var(--color-on-surface);
+}
+
+.stitch-title-small {
+  font-family: var(--font-sans);
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-bold);
+  color: var(--color-on-surface);
+}
+
+.stitch-body-medium {
+  font-family: var(--font-sans);
+  font-size: var(--font-size-base);
+  font-weight: var(--font-weight-regular);
+  color: var(--color-on-surface-variant);
+  line-height: 1.5;
+}
+
+.stitch-body-small {
+  font-family: var(--font-sans);
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-regular);
+  color: var(--color-on-surface-variant);
+  line-height: 1.4;
+}
+
+.stitch-body-xs {
+  font-family: var(--font-sans);
+  font-size: var(--font-size-xs);
+  font-weight: var(--font-weight-medium);
+  color: var(--color-on-surface-variant);
+}
+
+.stitch-mono {
+  font-family: var(--font-mono);
+  font-size: var(--font-size-2xs);
+}
+
+/* Layout helpers to structure without Tailwind utilities */
+.stitch-flex {
+  display: flex;
+}
+
+.stitch-flex-col {
+  display: flex;
+  flex-direction: column;
+}
+
+.stitch-flex-row {
+  display: flex;
+  flex-direction: row;
+}
+
+.stitch-flex-wrap {
+  display: flex;
+  flex-wrap: wrap;
+}
+
+.stitch-align-center {
+  align-items: center;
+}
+
+.stitch-justify-between {
+  justify-content: space-between;
+}
+
+.stitch-justify-center {
+  justify-content: center;
+}
+
+.stitch-flex-1 {
+  flex: 1 1 0%;
+}
+
+.stitch-shrink-0 {
+  flex-shrink: 0;
+}
+
+.stitch-gap-xs {
+  gap: var(--spacing-xs);
+}
+
+.stitch-gap-sm {
+  gap: var(--spacing-sm);
+}
+
+.stitch-gap-base {
+  gap: var(--spacing-base);
+}
+
+.stitch-gap-md {
+  gap: var(--spacing-md);
+}
+
+.stitch-gap-lg {
+  gap: var(--spacing-lg);
+}
+
+/* Spacing classes */
+.stitch-mt-xs { margin-top: var(--spacing-xs); }
+.stitch-mt-sm { margin-top: var(--spacing-sm); }
+.stitch-mt-base { margin-top: var(--spacing-base); }
+.stitch-mt-md { margin-top: var(--spacing-md); }
+.stitch-mt-lg { margin-top: var(--spacing-lg); }
+.stitch-mt-xl { margin-top: var(--spacing-xl); }
+
+.stitch-mb-xs { margin-bottom: var(--spacing-xs); }
+.stitch-mb-sm { margin-bottom: var(--spacing-sm); }
+.stitch-mb-base { margin-bottom: var(--spacing-base); }
+.stitch-mb-md { margin-bottom: var(--spacing-md); }
+.stitch-mb-lg { margin-bottom: var(--spacing-lg); }
+.stitch-mb-xl { margin-bottom: var(--spacing-xl); }
+
+/* Card styles */
+.stitch-card {
+  background-color: var(--color-surface);
+  border-radius: var(--radius-card-radius);
+  padding: var(--card-padding-lg);
+  box-shadow: var(--shadow-card);
+  border: 1px solid rgba(203, 213, 225, 0.4);
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-sm);
+}
+
+.stitch-card-sm {
+  background-color: var(--color-surface);
+  border-radius: var(--radius-lg);
+  padding: var(--card-padding-sm);
+  box-shadow: var(--shadow-sm);
+  border: 1px solid rgba(203, 213, 225, 0.4);
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-xs);
+}
+
+/* Button definitions matching Stitch */
+.stitch-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-family: var(--font-sans);
+  font-weight: var(--font-weight-semibold);
+  font-size: var(--font-size-sm);
+  border-radius: var(--radius-full);
+  cursor: pointer;
+  transition: all 0.1s ease-in-out;
+  border: none;
+  white-space: nowrap;
+  user-select: none;
+  height: var(--button-height-md);
+  padding-left: var(--button-padding-x-md);
+  padding-right: var(--button-padding-x-md);
+  text-decoration: none;
+}
+
+.stitch-btn-sm {
+  height: var(--button-height-sm);
+  padding-left: var(--button-padding-x-sm);
+  padding-right: var(--button-padding-x-sm);
+  font-size: var(--font-size-2xs);
+}
+
+.stitch-btn-lg {
+  height: var(--button-height-lg);
+  padding-left: var(--button-padding-x-lg);
+  padding-right: var(--button-padding-x-lg);
+  font-size: var(--font-size-base);
+}
+
+.stitch-btn-primary {
+  background-color: var(--color-primary);
+  color: var(--color-on-primary);
+}
+.stitch-btn-primary:hover {
+  background-color: var(--color-primary-hover);
+}
+.stitch-btn-primary:active {
+  transform: scale(0.97);
+}
+
+.stitch-btn-secondary {
+  background-color: var(--color-secondary);
+  color: var(--color-on-secondary);
+}
+.stitch-btn-secondary:hover {
+  background-color: var(--color-secondary-hover);
+}
+.stitch-btn-secondary:active {
+  transform: scale(0.97);
+}
+
+.stitch-btn-outline {
+  background-color: transparent;
+  color: var(--color-primary);
+  border: 1px solid var(--color-primary);
+}
+.stitch-btn-outline:hover {
+  background-color: var(--color-primary-container);
+}
+.stitch-btn-outline:active {
+  transform: scale(0.97);
+}
+
+.stitch-btn-flat {
+  background-color: var(--color-surface-container-low);
+  color: var(--color-on-surface);
+}
+.stitch-btn-flat:hover {
+  background-color: var(--color-surface-container);
+}
+.stitch-btn-flat:active {
+  transform: scale(0.97);
+}
+
+.stitch-btn-danger {
+  background-color: var(--color-error);
+  color: var(--color-on-error);
+}
+.stitch-btn-danger:hover {
+  background-color: var(--color-error-hover);
+}
+.stitch-btn-danger:active {
+  transform: scale(0.97);
+}
+
+/* Inputs styled to Stitch */
+.stitch-input-container {
+  position: relative;
+  width: 100%;
+}
+
+.stitch-input-icon {
+  position: absolute;
+  left: 16px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: var(--color-outline);
+  pointer-events: none;
+}
+
+.stitch-input {
+  width: 100%;
+  height: 50px;
+  padding-left: 44px;
+  padding-right: 16px;
+  background-color: var(--color-surface-container-low);
+  border: 1px solid transparent;
+  border-radius: var(--radius-xl);
+  font-family: var(--font-sans);
+  font-size: var(--font-size-sm);
+  color: var(--color-on-surface);
+  box-sizing: border-box;
+  transition: all 0.2s;
+}
+
+.stitch-input:focus {
+  outline: none;
+  background-color: var(--color-surface);
+  border-color: var(--color-primary);
+  box-shadow: 0 0 0 2px var(--color-primary-container);
+}
+
+.stitch-input-raw {
+  width: 100%;
+  height: 44px;
+  padding-left: var(--spacing-base);
+  padding-right: var(--spacing-base);
+  background-color: var(--color-surface-container-low);
+  border: 1px solid rgba(203, 213, 225, 0.4);
+  border-radius: var(--radius-md);
+  font-family: var(--font-sans);
+  font-size: var(--font-size-sm);
+  color: var(--color-on-surface);
+  transition: all 0.2s;
+}
+
+.stitch-input-raw:focus {
+  outline: none;
+  background-color: var(--color-surface);
+  border-color: var(--color-primary);
+}
+
+/* Standard Badges matching Stitch */
+.stitch-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px 10px;
+  border-radius: var(--radius-full);
+  font-size: var(--font-size-2xs);
+  font-weight: var(--font-weight-bold);
+  text-transform: uppercase;
+  width: fit-content;
+}
+
+.stitch-badge-primary {
+  background-color: var(--color-primary-container);
+  color: var(--color-on-primary-container);
+}
+
+.stitch-badge-secondary {
+  background-color: var(--color-secondary-container);
+  color: var(--color-on-secondary-container);
+}
+
+.stitch-badge-tertiary {
+  background-color: var(--color-tertiary-container);
+  color: var(--color-on-tertiary-container);
+}
+
+.stitch-badge-error {
+  background-color: var(--color-error-container);
+  color: var(--color-on-error-container);
+}
+
+/* Form Helper styles */
+.stitch-form-group {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-xs);
+}
+
+.stitch-form-label {
+  font-family: var(--font-sans);
+  font-size: var(--font-size-2xs);
+  font-weight: var(--font-weight-bold);
+  color: var(--color-outline);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+/* Grid configurations */
+.stitch-grid-2 {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--spacing-sm);
+}
+
+.stitch-grid-3 {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: var(--spacing-xs);
+}
+
+.stitch-grid-4 {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: var(--spacing-xs);
+}
+
+/* Hide scrollbars but keep functionality */
+.stitch-hide-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+.stitch-hide-scrollbar {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+  overflow-x: auto;
+}
+
+/* Navbar active icon/text animations */
+.stitch-nav-btn {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  flex: 1 1 0%;
+  color: var(--color-on-surface-variant);
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  padding: 4px 0;
+  transition: all 0.15s;
+}
+
+.stitch-nav-btn:active {
+  transform: scale(0.9);
+}
+
+.stitch-nav-btn-active {
+  color: var(--color-primary);
+  font-weight: var(--font-weight-bold);
+}
+
+/* Custom interactive animations */
+@keyframes routeAnimation {
+  0% { stroke-dashoffset: 1000; }
+  100% { stroke-dashoffset: 0; }
+}
+
+.stitch-route-line {
+  stroke-dasharray: 1000;
+  stroke-dashoffset: 1000;
+  animation: routeAnimation 8s linear infinite;
+}
+
+/* Premium Animations & Micro-interactions */
+.animate-fade-in {
+  animation: fadeIn 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.animate-slide-up {
+  animation: slideUp 0.35s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+@keyframes slideUp {
+  from {
+    transform: translateY(100%);
+  }
+  to {
+    transform: translateY(0);
+  }
+}
+
+.skeleton {
+  background: linear-gradient(90deg, var(--color-surface-container-low) 25%, var(--color-surface-container) 50%, var(--color-surface-container-low) 75%);
+  background-size: 200% 100%;
+  animation: shimmer 1.5s infinite;
+  border-radius: var(--radius-sm);
+  color: transparent !important;
+}
+
+@keyframes shimmer {
+  0% {
+    background-position: 200% 0;
+  }
+  100% {
+    background-position: -200% 0;
+  }
+}
+
+/* Premium Styling Extensions */
+.glass-card {
+  background: rgba(255, 255, 255, 0.72) !important;
+  backdrop-filter: blur(14px) !important;
+  -webkit-backdrop-filter: blur(14px) !important;
+  border: 1px solid rgba(255, 255, 255, 0.5) !important;
+  box-shadow: 0 8px 30px 0 rgba(15, 23, 42, 0.03) !important;
+}
+
+.hover-card {
+  transition: transform 0.28s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.28s ease, border-color 0.28s ease !important;
+}
+
+.hover-card:hover {
+  transform: translateY(-4px) !important;
+  box-shadow: 0 12px 28px -4px rgba(15, 23, 42, 0.08), 0 4px 12px -2px rgba(15, 23, 42, 0.03) !important;
+  border-color: rgba(79, 70, 229, 0.25) !important;
+}
+
+.active-scale {
+  transition: transform 0.1s ease !important;
+}
+
+.active-scale:active {
+  transform: scale(0.96) !important;
+}
+
+.carousel-snap {
+  scroll-snap-type: x mandatory;
+  scroll-behavior: smooth;
+  display: flex;
+  overflow-x: auto;
+  gap: var(--spacing-base);
+}
+
+.carousel-snap > * {
+  scroll-snap-align: start;
+  flex-shrink: 0;
+}
+
+.shadow-premium {
+  box-shadow: 0 12px 30px -10px rgba(79, 70, 229, 0.08), 0 4px 12px -4px rgba(79, 70, 229, 0.02) !important;
+}
+
+.category-emoji-card {
+  transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+  border: 1px solid rgba(226, 232, 240, 0.8);
+  border-radius: var(--radius-lg);
+  background: var(--color-surface);
+  padding: 12px 8px;
+  cursor: pointer;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--spacing-xs);
+}
+
+.category-emoji-card:hover {
+  transform: translateY(-2px);
+  border-color: var(--color-primary);
+  background: rgba(79, 70, 229, 0.02);
+  box-shadow: var(--shadow-sm);
+}
+
+.category-emoji-card:active {
+  transform: scale(0.95);
+}
+
+/* Continuously Moving Carousels */
+.carousel-container {
+  overflow: hidden;
+  width: 100%;
+  padding: 8px 0;
+  position: relative;
+  mask-image: linear-gradient(to right, transparent, white 8%, white 92%, transparent);
+  -webkit-mask-image: linear-gradient(to right, transparent, white 8%, white 92%, transparent);
+}
+
+.carousel-track-left {
+  display: flex;
+  gap: var(--spacing-base);
+  width: max-content;
+  animation: scroll-left-dir 45s linear infinite;
+}
+
+.carousel-track-right {
+  display: flex;
+  gap: var(--spacing-base);
+  width: max-content;
+  animation: scroll-right-dir 45s linear infinite;
+}
+
+.carousel-track-left:hover,
+.carousel-track-right:hover {
+  animation-play-state: paused !important;
+}
+
+@keyframes scroll-left-dir {
+  0% {
+    transform: translateX(0);
+  }
+  100% {
+    transform: translateX(-50%);
+  }
+}
+
+@keyframes scroll-right-dir {
+  0% {
+    transform: translateX(-50%);
+  }
+  100% {
+    transform: translateX(0);
+  }
+}
+
+/* Pulse GPS Pointer for Maps navigation */
+@keyframes pulseGps {
+  0% {
+    box-shadow: 0 0 0 0 rgba(79, 70, 229, 0.6);
+    transform: scale(0.95);
+  }
+  70% {
+    box-shadow: 0 0 0 14px rgba(79, 70, 229, 0);
+    transform: scale(1.1);
+  }
+  100% {
+    box-shadow: 0 0 0 0 rgba(79, 70, 229, 0);
+    transform: scale(0.95);
+  }
+}
+
+.gps-pulsing-marker {
+  width: 16px;
+  height: 16px;
+  background-color: #4f46e5;
+  border: 2px solid white;
+  border-radius: 50%;
+  animation: pulseGps 1.8s infinite;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.3);
+}
+

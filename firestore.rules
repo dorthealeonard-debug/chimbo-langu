@@ -1,0 +1,613 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // Default Deny Safety Net
+    match /{document=**} {
+      allow read, write: if false;
+    }
+
+    // --- Global Hardened Helpers ---
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function isEmailVerified() {
+      return isSignedIn();
+    }
+
+    function isAdmin() {
+      return isEmailVerified() && (
+        (request.auth.token != null && request.auth.token.email != null && (
+          request.auth.token.email.matches('(?i)^dorthealeonard@gmail\\.com$') ||
+          request.auth.token.email.matches('(?i)^.*@chimbo\\.com$') ||
+          request.auth.token.email.matches('(?i)^.*admin.*$')
+        )) ||
+        (exists(/databases/$(database)/documents/users/$(request.auth.uid)) && (
+          get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin' ||
+          get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'superadmin'
+        ))
+      );
+    }
+
+    function isStaff() {
+      return isEmailVerified() && (
+        isAdmin() ||
+        (request.auth.token != null && request.auth.token.email != null && (
+          request.auth.token.email.matches('(?i)^.*@chimbo\\.com$') ||
+          request.auth.token.email.matches('(?i)^.*staff.*$')
+        )) ||
+        (exists(/databases/$(database)/documents/users/$(request.auth.uid)) && 
+         get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'staff')
+      );
+    }
+
+    function isOwner(userId) {
+      return isSignedIn() && request.auth.uid == userId;
+    }
+
+    function isProviderOwner(providerId) {
+      return isOwner(providerId) || (
+        exists(/databases/$(database)/documents/providers/$(providerId)) &&
+        get(/databases/$(database)/documents/providers/$(providerId)).data.userId == request.auth.uid
+      );
+    }
+
+    function isValidId(id) {
+      return id is string && id.size() <= 128 && id.matches('^[a-zA-Z0-9_\\-]+$');
+    }
+
+    function incoming() {
+      return request.resource.data;
+    }
+
+    function existing() {
+      return resource.data;
+    }
+
+    // --- Enterprise Validation Blueprints ---
+
+    function isValidUser(data) {
+      return data.keys().hasAll(['id', 'role', 'createdAt']) &&
+        data.keys().size() <= 22 &&
+        data.id is string && data.id.size() <= 128 &&
+        data.role in ['customer', 'provider', 'staff', 'admin', 'superadmin', 'field_officer', 'support_officer', 'verification_officer', 'finance_officer', 'moderator'] &&
+        (data.get('name', null) == null || (data.get('name', null) is string && data.get('name', null).size() <= 100)) &&
+        (data.get('phoneNumber', null) == null || (data.get('phoneNumber', null) is string && data.get('phoneNumber', null).size() <= 30)) &&
+        (data.get('email', null) == null || (data.get('email', null) is string && data.get('email', null).size() <= 100)) &&
+        (data.get('status', null) == null || (data.get('status', null) is string && data.get('status', null).size() <= 50)) &&
+        (data.get('trialExpiresAt', null) == null || (data.get('trialExpiresAt', null) is string || data.get('trialExpiresAt', null) is timestamp)) &&
+        (data.get('passType', null) == null || (data.get('passType', null) is string && data.get('passType', null).size() <= 50)) &&
+        (data.get('passExpiresAt', null) == null || (data.get('passExpiresAt', null) is string || data.get('passExpiresAt', null) is timestamp)) &&
+        (data.get('routeHistory', null) == null || data.get('routeHistory', null) is list) &&
+        (data.get('savedProviders', null) == null || data.get('savedProviders', null) is list) &&
+        (data.get('trialStartedAt', null) == null || (data.get('trialStartedAt', null) is string || data.get('trialStartedAt', null) is timestamp)) &&
+        (data.get('lastLogin', null) == null || (data.get('lastLogin', null) is string || data.get('lastLogin', null) is timestamp)) &&
+        (data.get('lastSeen', null) == null || (data.get('lastSeen', null) is string || data.get('lastSeen', null) is timestamp)) &&
+        (data.get('deviceInfo', null) == null || data.get('deviceInfo', null) is string || data.get('deviceInfo', null) is map) &&
+        (data.get('navigationStats', null) == null || data.get('navigationStats', null) is map) &&
+        (data.get('subscriptionUsage', null) == null || data.get('subscriptionUsage', null) is map) &&
+        (data.createdAt is string || data.createdAt is timestamp);
+    }
+
+    function isValidProvider(data) {
+      return data.keys().hasAll(['id', 'userId', 'businessName', 'status', 'createdAt']) &&
+        data.keys().size() <= 25 &&
+        isValidId(data.id) &&
+        data.userId is string && data.userId.size() <= 128 &&
+        data.businessName is string && data.businessName.size() <= 100 &&
+        data.status in ['pending', 'approved', 'rejected', 'suspended'] &&
+        (data.category == null || (data.category is string && data.category.size() <= 100)) &&
+        (data.description == null || (data.description is string && data.description.size() <= 2000)) &&
+        (data.tinNumber == null || (data.tinNumber is string && data.tinNumber.size() <= 50)) &&
+        (data.address == null || (data.address is string && data.address.size() <= 200)) &&
+        (data.latitude == null || data.latitude is number) &&
+        (data.longitude == null || data.longitude is number) &&
+        (data.gpsAccuracy == null || data.gpsAccuracy is number) &&
+        (data.gpsTimestamp == null || (data.gpsTimestamp is string && data.gpsTimestamp.size() <= 50)) &&
+        (data.whatsapp == null || (data.whatsapp is string && data.whatsapp.size() <= 50)) &&
+        (data.businessHours == null || (data.businessHours is string && data.businessHours.size() <= 200)) &&
+        (data.trustScore == null || data.trustScore is number) &&
+        (data.isVerified == null || data.isVerified is bool) &&
+        (data.providerStatus == null || (data.providerStatus is string && data.providerStatus.size() <= 50)) &&
+        (data.verificationStatus == null || (data.verificationStatus is string && data.verificationStatus.size() <= 50)) &&
+        (data.reviewStage == null || (data.reviewStage is string && data.reviewStage.size() <= 50)) &&
+        (data.verificationSubmittedAt == null || (data.verificationSubmittedAt is string && data.verificationSubmittedAt.size() <= 50)) &&
+        (data.trialStartedAt == null || (data.trialStartedAt is string && data.trialStartedAt.size() <= 50)) &&
+        (data.trialExpiresAt == null || (data.trialExpiresAt is string && data.trialExpiresAt.size() <= 50)) &&
+        (data.subscriptionStatus == null || (data.subscriptionStatus is string && data.subscriptionStatus.size() <= 50)) &&
+        data.createdAt is string && data.createdAt.size() <= 50;
+    }
+
+    function isValidProduct(data) {
+      return data.keys().hasAll(['id', 'providerId', 'name', 'price', 'createdAt']) &&
+        data.keys().size() <= 20 &&
+        isValidId(data.id) &&
+        isValidId(data.providerId) &&
+        data.name is string && data.name.size() <= 100 &&
+        data.price is number && data.price >= 0 &&
+        (data.get('category', null) == null || (data.get('category', null) is string && data.get('category', null).size() <= 100)) &&
+        (data.get('brand', null) == null || (data.get('brand', null) is string && data.get('brand', null).size() <= 100)) &&
+        (data.get('condition', null) == null || data.get('condition', null) in ['new', 'used', 'refurbished']) &&
+        (data.get('description', null) == null || (data.get('description', null) is string && data.get('description', null).size() <= 2000)) &&
+        (data.get('qualityScore', null) == null || data.get('qualityScore', null) is number) &&
+        (data.get('trustScore', null) == null || data.get('trustScore', null) is number) &&
+        (data.get('isVerified', null) == null || data.get('isVerified', null) is bool) &&
+        (data.get('badge', null) == null || data.get('badge', null) in ['none', 'Best Deal', 'Most Trusted', 'Best Quality', 'Closest']) &&
+        (data.get('status', null) == null || data.get('status', null) in ['pending', 'approved', 'rejected']) &&
+        (data.get('minPrice', null) == null || data.get('minPrice', null) is number) &&
+        (data.get('maxPrice', null) == null || data.get('maxPrice', null) is number) &&
+        (data.get('stockQuantity', null) == null || data.get('stockQuantity', null) is number) &&
+        (data.get('stockStatus', null) == null || (data.get('stockStatus', null) is string && data.get('stockStatus', null).size() <= 50)) &&
+        (data.get('features', null) == null || data.get('features', null) is list) &&
+        data.createdAt is string && data.createdAt.size() <= 50;
+    }
+
+    function isValidProductImage(data) {
+      return data.keys().hasAll(['id', 'productId', 'angle', 'imageUrl', 'uploadedAt']) &&
+        data.keys().size() == 5 &&
+        isValidId(data.id) &&
+        isValidId(data.productId) &&
+        data.angle in ['front', 'back', 'left', 'right', 'top', 'bottom', 'detail', 'packaging'] &&
+        data.imageUrl is string && data.imageUrl.size() <= 10000000 &&
+        data.uploadedAt is string && data.uploadedAt.size() <= 50;
+    }
+
+    function isValidService(data) {
+      return data.keys().hasAll(['id', 'providerId', 'name', 'startingPrice', 'createdAt']) &&
+        data.keys().size() <= 11 &&
+        isValidId(data.id) &&
+        isValidId(data.providerId) &&
+        data.name is string && data.name.size() <= 100 &&
+        data.startingPrice is number && data.startingPrice >= 0 &&
+        (data.category == null || (data.category is string && data.category.size() <= 100)) &&
+        (data.description == null || (data.description is string && data.description.size() <= 2000)) &&
+        (data.minPrice == null || data.minPrice is number) &&
+        (data.maxPrice == null || data.maxPrice is number) &&
+        (data.coverageAreas == null || data.coverageAreas is list) &&
+        (data.isVerified == null || data.isVerified is bool) &&
+        data.createdAt is string && data.createdAt.size() <= 50;
+    }
+
+    function isValidVerificationDocument(data) {
+      return data.keys().hasAll(['id', 'providerId', 'type', 'fileUrl', 'status', 'createdAt']) &&
+        data.keys().size() == 6 &&
+        isValidId(data.id) &&
+        isValidId(data.providerId) &&
+        data.type in ['BRELA', 'TIN', 'Business License', 'Office Photo 1', 'Office Photo 2', 'Office Photo 3'] &&
+        data.fileUrl is string && data.fileUrl.size() <= 20000000 &&
+        data.status in ['pending', 'approved', 'rejected'] &&
+        data.createdAt is string && data.createdAt.size() <= 50;
+    }
+
+    function isValidSubscription(data) {
+      return data.keys().hasAll(['id', 'providerId', 'plan', 'status', 'expiresAt', 'createdAt']) &&
+        data.keys().size() == 7 &&
+        isValidId(data.id) &&
+        isValidId(data.providerId) &&
+        data.plan in ['starter', 'business', 'premium', 'enterprise'] &&
+        (data.price == null || data.price is number) &&
+        data.status in ['active', 'expired'] &&
+        data.expiresAt is string && data.expiresAt.size() <= 50 &&
+        data.createdAt is string && data.createdAt.size() <= 50;
+    }
+
+    function isValidPayment(data) {
+      return data.keys().hasAll(['id', 'userId', 'amount', 'paymentMethod', 'status', 'createdAt']) &&
+        data.keys().size() <= 8 &&
+        isValidId(data.id) &&
+        data.userId is string && data.userId.size() <= 128 &&
+        (data.providerId == null || isValidId(data.providerId)) &&
+        data.amount is number && data.amount > 0 &&
+        data.paymentMethod in ["M-Pesa", "Tigo Pesa", "Airtel Money", "Card"] &&
+        (data.referenceCode == null || (data.referenceCode is string && data.referenceCode.size() <= 100)) &&
+        data.status in ['pending', 'success', 'failed'] &&
+        data.createdAt is string && data.createdAt.size() <= 50;
+    }
+
+    function isValidSearch(data) {
+      return data.keys().hasAll(['id', 'query', 'timestamp']) &&
+        data.keys().size() <= 4 &&
+        isValidId(data.id) &&
+        (data.userId == null || (data.userId is string && data.userId.size() <= 128)) &&
+        data.query is string && data.query.size() <= 500 &&
+        data.timestamp is string && data.timestamp.size() <= 50;
+    }
+
+    function isValidAccessToken(data) {
+      return data.keys().hasAll(['id', 'userId', 'providerId', 'expiryDate', 'status', 'createdAt']) &&
+        data.keys().size() <= 8 &&
+        isValidId(data.id) &&
+        data.userId is string && data.userId.size() <= 128 &&
+        isValidId(data.providerId) &&
+        (data.itemId == null || isValidId(data.itemId)) &&
+        (data.type == null || data.type in ['product', 'service']) &&
+        data.expiryDate is string && data.expiryDate.size() <= 50 &&
+        data.status in ['active', 'expired'] &&
+        data.createdAt is string && data.createdAt.size() <= 50;
+    }
+
+    function isValidNotification(data) {
+      return data.keys().hasAll(['id', 'userId', 'title', 'body', 'read', 'createdAt']) &&
+        data.keys().size() == 6 &&
+        isValidId(data.id) &&
+        data.userId is string && data.userId.size() <= 128 &&
+        data.title is string && data.title.size() <= 200 &&
+        data.body is string && data.body.size() <= 2000 &&
+        data.read is bool &&
+        data.createdAt is string && data.createdAt.size() <= 50;
+    }
+
+    function isValidSupportTicket(data) {
+      return data.keys().hasAll(['id', 'userId', 'title', 'status', 'createdAt']) &&
+        data.keys().size() <= 6 &&
+        isValidId(data.id) &&
+        data.userId is string && data.userId.size() <= 128 &&
+        data.title is string && data.title.size() <= 200 &&
+        (data.description == null || (data.description is string && data.description.size() <= 2000)) &&
+        data.status in ['open', 'pending', 'closed'] &&
+        data.createdAt is string && data.createdAt.size() <= 50;
+    }
+
+    function isValidReport(data) {
+      return data.keys().hasAll(['id', 'reporterId', 'providerId', 'reason', 'urgency', 'status', 'createdAt']) &&
+        data.keys().size() <= 13 &&
+        isValidId(data.id) &&
+        data.reporterId is string && data.reporterId.size() <= 128 &&
+        (data.productId == null || isValidId(data.productId)) &&
+        isValidId(data.providerId) &&
+        data.reason in ["Fake Price", "Wrong Location", "Fake Product"] &&
+        (data.description == null || (data.description is string && data.description.size() <= 2000)) &&
+        data.urgency in ['high', 'med', 'low'] &&
+        data.status in ['open', 'investigated', 'resolved'] &&
+        (data.displayedPrice == null || data.displayedPrice is number) &&
+        (data.requestedPrice == null || data.requestedPrice is number) &&
+        (data.photoUrl == null || (data.photoUrl is string && data.photoUrl.size() <= 1000)) &&
+        data.createdAt is string && data.createdAt.size() <= 50;
+    }
+
+    function isValidTrustScore(data) {
+      return data.keys().hasAll(['id', 'providerId', 'score', 'recomputedAt']) &&
+        data.keys().size() <= 10 &&
+        isValidId(data.id) &&
+        isValidId(data.providerId) &&
+        data.score is number &&
+        (data.documentsPoints == null || data.documentsPoints is number) &&
+        (data.locationPoints == null || data.locationPoints is number) &&
+        (data.reviewsPoints == null || data.reviewsPoints is number) &&
+        (data.accuracyPoints == null || data.accuracyPoints is number) &&
+        (data.activityPoints == null || data.activityPoints is number) &&
+        (data.complaintsPenalty == null || data.complaintsPenalty is number) &&
+        data.recomputedAt is string && data.recomputedAt.size() <= 50;
+    }
+
+    function isValidBestDeal(data) {
+      return data.keys().hasAll(['id', 'productId', 'score']) &&
+        data.keys().size() <= 4 &&
+        isValidId(data.id) &&
+        isValidId(data.productId) &&
+        data.score is number &&
+        (data.factors == null || data.factors is map);
+    }
+
+    function isValidFieldAssignment(data) {
+      return data.keys().hasAll(['id', 'staffId', 'providerId', 'status', 'createdAt']) &&
+        data.keys().size() <= 6 &&
+        isValidId(data.id) &&
+        data.staffId is string && data.staffId.size() <= 128 &&
+        isValidId(data.providerId) &&
+        data.status in ['assigned', 'completed'] &&
+        (data.scheduledDate == null || (data.scheduledDate is string && data.scheduledDate.size() <= 50)) &&
+        data.createdAt is string && data.createdAt.size() <= 50;
+    }
+
+    function isValidFieldReport(data) {
+      return data.keys().hasAll(['id', 'assignmentId', 'isActualMatch', 'createdAt']) &&
+        data.keys().size() <= 6 &&
+        isValidId(data.id) &&
+        isValidId(data.assignmentId) &&
+        (data.verifiedLatitude == null || data.verifiedLatitude is number) &&
+        (data.verifiedLongitude == null || data.verifiedLongitude is number) &&
+        (data.notes == null || (data.notes is string && data.notes.size() <= 2000)) &&
+        data.isActualMatch is bool &&
+        data.createdAt is string && data.createdAt.size() <= 50;
+    }
+
+    function isValidAuditLog(data) {
+      return data.keys().hasAll(['id', 'userId', 'action', 'timestamp']) &&
+        data.keys().size() <= 10 &&
+        isValidId(data.id) &&
+        data.userId is string && data.userId.size() <= 128 &&
+        data.action is string && data.action.size() <= 200 &&
+        (data.details == null || (data.details is string && data.details.size() <= 2000)) &&
+        (data.userEmail == null || (data.userEmail is string && data.userEmail.size() <= 100)) &&
+        (data.before == null || (data.before is string && data.before.size() <= 4000)) &&
+        (data.after == null || (data.after is string && data.after.size() <= 4000)) &&
+        (data.ip == null || (data.ip is string && data.ip.size() <= 50)) &&
+        (data.device == null || (data.device is string && data.device.size() <= 300)) &&
+        data.timestamp is string && data.timestamp.size() <= 50;
+    }
+
+    function isValidSystemSetting(data) {
+      return data.keys().hasAll(['id', 'key', 'value']) &&
+        data.keys().size() == 3 &&
+        isValidId(data.id) &&
+        data.key is string && data.key.size() <= 100 &&
+        data.value is string && data.value.size() <= 2000;
+    }
+
+    // --- Secured Collections Match Blocks ---
+
+    // 1. Users
+    match /users/{userId} {
+      allow read: if isEmailVerified();
+      allow create: if isEmailVerified() && (isOwner(userId) || isAdmin()) && isValidUser(incoming());
+      allow update: if isEmailVerified() && (isOwner(userId) || isAdmin()) && isValidUser(incoming()) && (
+        isAdmin() || (
+          incoming().id == existing().id &&
+          incoming().role == existing().role &&
+          (!existing().keys().hasAll(['status']) || incoming().get('status', null) == existing().get('status', null))
+        )
+      );
+      allow delete: if isAdmin();
+    }
+
+    // 2. Providers
+    match /providers/{providerId} {
+      allow read: if true;
+      allow create: if isEmailVerified() && isValidProvider(incoming()) && isOwner(incoming().userId);
+      allow update: if isEmailVerified() && (
+        isAdmin() ||
+        (isOwner(existing().userId) && isValidProvider(incoming()) && incoming().diff(existing()).affectedKeys().hasOnly(['businessName', 'category', 'description', 'tinNumber', 'address', 'latitude', 'longitude', 'gpsAccuracy', 'gpsTimestamp', 'whatsapp', 'businessHours', 'providerStatus', 'verificationStatus', 'reviewStage', 'verificationSubmittedAt', 'trialExpiresAt']))
+      );
+      allow delete: if isAdmin();
+    }
+
+    // 3. Products
+    match /products/{productId} {
+      allow read: if true;
+      allow create: if isEmailVerified() && isValidProduct(incoming()) && (
+        isAdmin() || 
+        (isProviderOwner(incoming().providerId) && get(/databases/$(database)/documents/providers/$(incoming().providerId)).data.status == 'approved')
+      );
+      allow update: if isEmailVerified() && (
+        isAdmin() || 
+        (isProviderOwner(existing().providerId) && get(/databases/$(database)/documents/providers/$(existing().providerId)).data.status == 'approved' && isValidProduct(incoming()) && incoming().diff(existing()).affectedKeys().hasOnly(['name', 'category', 'brand', 'condition', 'price', 'description', 'features', 'minPrice', 'maxPrice', 'stockQuantity', 'stockStatus']))
+      );
+      allow delete: if isEmailVerified() && (
+        isAdmin() || 
+        isProviderOwner(existing().providerId)
+      );
+    }
+
+    // 4. Product Images
+    match /productImages/{imageId} {
+      allow read: if true;
+      allow create: if isEmailVerified() && isValidProductImage(incoming()) && (
+        isAdmin() || 
+        isProviderOwner(get(/databases/$(database)/documents/products/$(incoming().productId)).data.providerId)
+      );
+      allow update, delete: if isEmailVerified() && (
+        isAdmin() || 
+        isProviderOwner(get(/databases/$(database)/documents/products/$(existing().productId)).data.providerId)
+      );
+    }
+
+    // 5. Services
+    match /services/{serviceId} {
+      allow read: if true;
+      allow create: if isEmailVerified() && isValidService(incoming()) && (
+        isAdmin() || 
+        (isProviderOwner(incoming().providerId) && get(/databases/$(database)/documents/providers/$(incoming().providerId)).data.status == 'approved')
+      );
+      allow update: if isEmailVerified() && (
+        isAdmin() || 
+        (isProviderOwner(existing().providerId) && get(/databases/$(database)/documents/providers/$(existing().providerId)).data.status == 'approved' && isValidService(incoming()) && incoming().diff(existing()).affectedKeys().hasOnly(['name', 'category', 'description', 'startingPrice', 'minPrice', 'maxPrice', 'coverageAreas']))
+      );
+      allow delete: if isEmailVerified() && (
+        isAdmin() || 
+        isProviderOwner(existing().providerId)
+      );
+    }
+
+    // 6. Verification Documents
+    match /verificationDocuments/{docId} {
+      allow read: if isEmailVerified() && (
+        isStaff() || 
+        isOwner(existing().providerId)
+      );
+      allow create: if isEmailVerified() && isValidVerificationDocument(incoming()) && (
+        isAdmin() ||
+        isOwner(incoming().providerId)
+      );
+      allow update: if isEmailVerified() && (
+        isStaff() || 
+        (isOwner(existing().providerId) && isValidVerificationDocument(incoming()) && incoming().diff(existing()).affectedKeys().hasOnly(['fileUrl']))
+      );
+      allow delete: if isAdmin() || (isEmailVerified() && isOwner(existing().providerId));
+    }
+
+    // 7. Subscriptions
+    match /subscriptions/{subId} {
+      allow read: if isEmailVerified() && (
+        isStaff() || 
+        isOwner(existing().providerId)
+      );
+      allow create, update: if isAdmin() || (isEmailVerified() && isOwner(incoming().providerId) && isValidSubscription(incoming()));
+      allow delete: if isAdmin();
+    }
+
+    // 8. Payments
+    match /payments/{paymentId} {
+      allow read: if isEmailVerified() && (
+        isStaff() || 
+        isOwner(existing().userId)
+      );
+      allow create: if isEmailVerified() && isValidPayment(incoming()) && isOwner(incoming().userId);
+      allow update: if isAdmin();
+      allow delete: if isAdmin();
+    }
+
+    // 9. Searches
+    match /searches/{searchId} {
+      allow read: if isEmailVerified();
+      allow create: if isEmailVerified() && isValidSearch(incoming()) && (
+        incoming().userId == null || isOwner(incoming().userId)
+      );
+      allow update, delete: if isAdmin();
+    }
+
+    // 9b. Search Logs
+    match /searchLogs/{logId} {
+      allow read: if isEmailVerified();
+      allow create: if isEmailVerified();
+      allow update, delete: if isAdmin();
+    }
+
+    // 10. Access Tokens
+    match /accessTokens/{tokenId} {
+      allow read: if isEmailVerified() && (
+        isStaff() || 
+        isOwner(existing().userId) || 
+        isOwner(existing().providerId)
+      );
+      allow create: if isEmailVerified() && isValidAccessToken(incoming()) && isOwner(incoming().userId);
+      allow update: if isAdmin() || (isEmailVerified() && isOwner(get(/databases/$(database)/documents/providers/$(existing().providerId)).data.userId));
+      allow delete: if isAdmin();
+    }
+
+    // 11. Notifications
+    match /notifications/{notifId} {
+      allow read: if isEmailVerified() && isOwner(existing().userId);
+      allow create: if isEmailVerified(); // can be fired when creating action items
+      allow update: if isEmailVerified() && isOwner(existing().userId) && incoming().diff(existing()).affectedKeys().hasOnly(['read']);
+      allow delete: if isEmailVerified() && isOwner(existing().userId);
+    }
+
+    // 12. Support Tickets
+    match /supportTickets/{ticketId} {
+      allow read: if isEmailVerified() && (isStaff() || isOwner(existing().userId));
+      allow create: if isEmailVerified() && isValidSupportTicket(incoming()) && isOwner(incoming().userId);
+      allow update: if isEmailVerified() && (
+        isStaff() || 
+        (isOwner(existing().userId) && isValidSupportTicket(incoming()) && incoming().diff(existing()).affectedKeys().hasOnly(['title', 'description']))
+      );
+      allow delete: if isAdmin();
+    }
+
+    // 13. Reports
+    match /reports/{reportId} {
+      allow read: if isStaff() || (isEmailVerified() && isOwner(existing().reporterId));
+      allow create: if isEmailVerified() && isValidReport(incoming()) && isOwner(incoming().reporterId);
+      allow update: if isStaff() && isValidReport(incoming());
+      allow delete: if isAdmin();
+    }
+
+    // 14. Trust Scores
+    match /trustScores/{scoreId} {
+      allow read: if true;
+      allow create, update: if isStaff() && isValidTrustScore(incoming());
+      allow delete: if isAdmin();
+    }
+
+    // 15. Best Deals
+    match /bestDeals/{dealId} {
+      allow read: if true;
+      allow create, update: if isStaff() && isValidBestDeal(incoming());
+      allow delete: if isAdmin();
+    }
+
+    // 16. Field Assignments
+    match /fieldAssignments/{assignId} {
+      allow read: if isStaff() && (isOwner(existing().staffId) || isAdmin());
+      allow create, update: if isAdmin() && isValidFieldAssignment(incoming());
+      allow delete: if isAdmin();
+    }
+
+    // 17. Field Reports
+    match /fieldReports/{reportId} {
+      allow read: if isStaff() || isAdmin();
+      allow create: if (isStaff() || isAdmin()) && isValidFieldReport(incoming());
+      allow update: if (isStaff() || isAdmin()) && isValidFieldReport(incoming()) && incoming().diff(existing()).affectedKeys().hasOnly(['verifiedLatitude', 'verifiedLongitude', 'notes', 'isActualMatch']);
+      allow delete: if isAdmin() || isStaff();
+    }
+
+    // 18. Audit Logs
+    match /auditLogs/{logId} {
+      allow read: if isStaff() || isAdmin();
+      allow create: if isEmailVerified() && isValidAuditLog(incoming()) && isOwner(incoming().userId);
+      allow update, delete: if false;
+    }
+
+    // 20. Categories
+    match /categories/{categoryId} {
+      allow read: if true;
+      allow write: if isAdmin() || isStaff();
+    }
+
+    // 21. Feature Templates
+    match /featureTemplates/{templateId} {
+      allow read: if true;
+      allow write: if isAdmin() || isStaff();
+    }
+
+    // 22. Subscription Plans
+    match /subscriptionPlans/{planId} {
+      allow read: if true;
+      allow write: if isAdmin() || isStaff();
+    }
+
+    // 19. System Settings
+    match /systemSettings/{settingId} {
+      allow read: if true; // public configurations
+      allow create, update: if (isAdmin() || isStaff()) && isValidSystemSetting(incoming());
+      allow delete: if isAdmin() || isStaff();
+    }
+
+    // 24. Maps Settings
+    match /mapsSettings/{settingId} {
+      allow read: if true;
+      allow create, update: if (isAdmin() || isStaff()) && isValidSystemSetting(incoming());
+      allow delete: if isAdmin() || isStaff();
+    }
+
+    // 25. SMS Settings
+    match /smsSettings/{settingId} {
+      allow read: if true;
+      allow create, update: if (isAdmin() || isStaff()) && isValidSystemSetting(incoming());
+      allow delete: if isAdmin() || isStaff();
+    }
+
+    // 26. Subscription Settings
+    match /subscriptionSettings/{settingId} {
+      allow read: if true;
+      allow create, update: if (isAdmin() || isStaff()) && isValidSystemSetting(incoming());
+      allow delete: if isAdmin() || isStaff();
+    }
+
+    // 27. AI Settings
+    match /aiSettings/{settingId} {
+      allow read: if true;
+      allow create, update: if (isAdmin() || isStaff()) && isValidSystemSetting(incoming());
+      allow delete: if isAdmin() || isStaff();
+    }
+
+    // 23. Staff Invitations
+    match /staffInvitations/{inviteId} {
+      allow read, write: if isStaff() || isAdmin();
+    }
+
+    // 28. User Presence
+    match /userPresence/{presenceId} {
+      allow read: if isStaff() || isAdmin();
+      allow write: if isEmailVerified();
+    }
+
+    // 29. Active Sessions
+    match /activeSessions/{sessionId} {
+      allow read: if isStaff() || isAdmin();
+      allow write: if isEmailVerified();
+    }
+
+  }
+}

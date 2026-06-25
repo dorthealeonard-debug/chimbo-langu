@@ -1,0 +1,6 @@
+{
+  "name": "CHIMBO",
+  "description": "CHIMBO - Soko Lako la Kidijitali la Uhakiki, Ulinganishaji wa Bei na Ubora, na Kukuelekeza kwa Muuzaji Halisi (TUKUPELEKE ALIPO)",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

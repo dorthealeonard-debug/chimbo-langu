@@ -4,6 +4,11 @@ import helmet from 'helmet';
 import compression from 'compression';
 import dotenv from 'dotenv';
 import path from 'path';
+import { fileURLToPath } from 'url';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+
 import { apiRouter } from './routes';
 import { errorHandler } from './middleware/errorHandler';
 import { securityHeaders } from './middleware/security';
@@ -38,6 +43,15 @@ app.get('/health', (req, res) => {
 
 // API Versioning routing
 app.use('/api/v1', apiRouter);
+
+// Serve static assets from the frontend build directory (parent of dist/server)
+const distPath = path.resolve(__dirname, '..');
+app.use(express.static(distPath));
+
+// SPA fallback: Serve index.html for any request that doesn't match an API route or static asset
+app.get('*', (req, res) => {
+  res.sendFile(path.resolve(distPath, 'index.html'));
+});
 
 // Global Error Handler
 app.use(errorHandler);

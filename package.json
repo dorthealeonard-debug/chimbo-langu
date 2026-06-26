@@ -8,14 +8,15 @@
   "node": "20.x"
 },
   "scripts": {
-    "dev": "vite --host 0.0.0.0 --port 3000",
-    "build": "vite build && npm run build:server",
-    "build:server": "esbuild server/server.ts --bundle --platform=node --target=node20 --outfile=dist/server.js --format=esm --external:express --external:dotenv",
-    "start": "node dist/server.js",
+    "dev": "vite --port=3000 --host=0.0.0.0",
+    "build:client": "vite build",
+    "build:server": "tsc -p tsconfig.server.json && node -e \"require('fs').writeFileSync('dist/server/package.json', JSON.stringify({type:'commonjs'}))\"",
+    "build": "npm run build:client && npm run build:server",
+    "start": "node dist/server/server.js",
     "server": "tsx server/server.ts",
     "preview": "vite preview",
     "lint": "tsc --noEmit",
-    "clean": "node -e \"const fs=require('fs'); if(fs.existsSync('dist')) fs.rmSync('dist',{recursive:true,force:true});\"",
+    "clean": "node -e \"const fs = require('fs'); fs.rmSync('dist', { recursive: true, force: true });\"",
     "rebuild": "npm run clean && npm install && npm run build"
   },
   "dependencies": {

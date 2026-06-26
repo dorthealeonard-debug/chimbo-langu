@@ -5,7 +5,7 @@ try {
   execSync('git add .', { stdio: 'inherit' });
   
   console.log('Committing changes...');
-  execSync('git commit -m "chore: migrate backend to native ESM architecture and remove esbuild"', { stdio: 'inherit' });
+  execSync('git commit -m "chore: secure helmet CSP for Firebase Mapbox and Cloudinary"', { stdio: 'inherit' });
   
   console.log('Pushing to GitHub...');
   execSync('git push origin main', { stdio: 'inherit' });

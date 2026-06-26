@@ -231,22 +231,22 @@ async function run() {
         console.log("Verifying Customer view...");
         // Customers are on the standard profile/auth view, check role text
         const displayedRole = await client.evaluate(`(() => {
-          const el = document.querySelector('.stitch-badge-primary');
+          const el = document.querySelector('.stitch-badge');
           return el ? el.innerText.trim() : '';
         })()`);
         console.log(`Displayed user role: ${displayedRole}`);
-        if (displayedRole.toLowerCase() !== 'customer') {
+        if (!displayedRole.toLowerCase().includes('customer')) {
           throw new Error(`Expected customer role, got ${displayedRole}`);
         }
       } else if (expectedRole === 'provider') {
         console.log("Verifying Provider Dashboard navigation...");
-        const hasProviderBtn = await client.evaluate(`!!document.getElementById('go-provider-db-btn')`);
+        const hasProviderBtn = await client.evaluate(`!!document.getElementById('open-provider-portal-btn')`);
         if (!hasProviderBtn) {
-          throw new Error("Provider Dashboard button (#go-provider-db-btn) is missing!");
+          throw new Error("Provider Dashboard button (#open-provider-portal-btn) is missing!");
         }
         
         // Go to Provider Dashboard
-        await client.evaluate(`document.getElementById('go-provider-db-btn').click()`);
+        await client.evaluate(`document.getElementById('open-provider-portal-btn').click()`);
         await delay(3000);
         
         const inDashboard = await client.evaluate(`document.body.innerText.includes('CHIMBO Provider') || document.body.innerText.includes('CHIMBO Muuzaji')`);

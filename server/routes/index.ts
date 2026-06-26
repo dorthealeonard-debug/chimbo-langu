@@ -1,5 +1,5 @@
 import { Router } from 'express';
-import { cloudinaryRouter } from './cloudinary';
+import { cloudinaryRouter } from './cloudinary.js';
 
 export const apiRouter = Router();
 

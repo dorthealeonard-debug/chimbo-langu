@@ -9,9 +9,9 @@ import { fileURLToPath } from 'url';
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
-import { apiRouter } from './routes';
-import { errorHandler } from './middleware/errorHandler';
-import { securityHeaders } from './middleware/security';
+import { apiRouter } from './routes/index.js';
+import { errorHandler } from './middleware/errorHandler.js';
+import { securityHeaders } from './middleware/security.js';
 
 // Load environment variables with robust absolute path resolution
 dotenv.config({ path: path.resolve(process.cwd(), '.env') });

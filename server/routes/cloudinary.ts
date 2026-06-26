@@ -1,5 +1,5 @@
 import { Router } from 'express';
-import { generateUploadSignature } from '../controllers/cloudinaryController';
+import { generateUploadSignature } from '../controllers/cloudinaryController.js';
 
 export const cloudinaryRouter = Router();
 
